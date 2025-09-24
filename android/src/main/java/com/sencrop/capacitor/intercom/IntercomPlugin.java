@@ -23,6 +23,17 @@ import org.json.JSONObject;
 @CapacitorPlugin(name = "Intercom")
 public class IntercomPlugin extends Plugin {
 
+    private static volatile boolean isInitialized = false;
+
+    public static void markInitialized() {
+        isInitialized = true;
+    }
+
+    @Override
+    public void load() {
+        // Do not auto-initialize; allow explicit initialize() to control timing
+    }
+
     private static Map<String, Object> mapFromJSON(JSONObject jsonObject) {
         if (jsonObject == null) {
             return null;
@@ -61,14 +72,30 @@ public class IntercomPlugin extends Plugin {
 
     @PluginMethod
     public void initialize(PluginCall call) throws Exception {
-        // get config
-        String apiKey = getConfig().getString("android_apiKey", "ADD_IN_CAPACITOR_CONFIG_JSON");
-        String appId = getConfig().getString("appId", "ADD_IN_CAPACITOR_CONFIG_JSON");
+        if (isInitialized) {
+            call.resolve();
+            return;
+        }
 
-        // init intercom sdk
+        String apiKey = getConfig().getString("android_apiKey", null);
+        String appId = getConfig().getString("appId", null);
+
+        if (apiKey == null || appId == null) {
+            call.reject("Missing Intercom configuration");
+            return;
+        }
+
         try {
             Intercom.initialize(this.getActivity().getApplication(), apiKey, appId);
-            Intercom.client().handlePushMessage();
+            isInitialized = true;
+            try {
+                Intercom.client().handlePushMessage();
+            } catch (Throwable ignored) {
+            }
+            try {
+                IntercomComponentController.enableAutoComponents(this.getContext());
+            } catch (Throwable ignored) {
+            }
             call.resolve();
         } catch (Exception e) {
             call.reject("Could not initialize the Intercom plugin");
