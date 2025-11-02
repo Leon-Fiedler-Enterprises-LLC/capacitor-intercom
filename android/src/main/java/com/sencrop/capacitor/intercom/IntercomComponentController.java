@@ -13,6 +13,7 @@ class IntercomComponentController {
 
     static void disableAutoComponents(Context context) {
         setComponentEnabled(context, "io.intercom.android.sdk.activities.IntercomPostActivity", false);
+        setComponentEnabled(context, "io.intercom.android.sdk.m5.IntercomRootActivity", false);
         setComponentEnabled(context, "io.intercom.android.sdk.push.IntercomPushService", false);
         setComponentEnabled(context, "io.intercom.android.sdk.push.RegistrationIntentService", false);
         setComponentEnabled(context, "io.intercom.android.sdk.push.fcm.IntercomFcmMessengerService", false);
@@ -21,6 +22,7 @@ class IntercomComponentController {
 
     static void enableAutoComponents(Context context) {
         setComponentEnabled(context, "io.intercom.android.sdk.activities.IntercomPostActivity", true);
+        setComponentEnabled(context, "io.intercom.android.sdk.m5.IntercomRootActivity", true);
         setComponentEnabled(context, "io.intercom.android.sdk.push.IntercomPushService", true);
         setComponentEnabled(context, "io.intercom.android.sdk.push.RegistrationIntentService", true);
         setComponentEnabled(context, "io.intercom.android.sdk.push.fcm.IntercomFcmMessengerService", true);
