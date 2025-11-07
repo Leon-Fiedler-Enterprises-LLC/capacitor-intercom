@@ -1,5 +1,7 @@
 package com.sencrop.capacitor.intercom;
 
+import android.app.Application;
+import android.content.Context;
 import androidx.annotation.NonNull;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -71,40 +73,29 @@ public class IntercomPlugin extends Plugin {
     }
 
     @PluginMethod
-    public void initialize(PluginCall call) throws Exception {
-        if (isInitialized) {
-            call.resolve();
-            return;
-        }
-
-        String apiKey = getConfig().getString("android_apiKey", null);
-        String appId = getConfig().getString("appId", null);
-
-        if (apiKey == null || appId == null) {
-            call.reject("Missing Intercom configuration");
+    public void initialize(PluginCall call) {
+        if (!ensureInitialized(call)) {
             return;
         }
 
         try {
-            Intercom.initialize(this.getActivity().getApplication(), apiKey, appId);
-            isInitialized = true;
-            try {
-                Intercom.client().handlePushMessage();
-            } catch (Throwable ignored) {
+            Intercom.client().handlePushMessage();
+        } catch (Throwable ignored) {}
+        try {
+            Context context = getContext();
+            if (context != null) {
+                IntercomComponentController.enableAutoComponents(context);
             }
-            try {
-                IntercomComponentController.enableAutoComponents(this.getContext());
-            } catch (Throwable ignored) {
-            }
-            call.resolve();
-        } catch (Exception e) {
-            call.reject("Could not initialize the Intercom plugin");
-            throw new Exception("Could not initialize the Intercom plugin");
-        }
+        } catch (Throwable ignored) {}
+
+        call.resolve();
     }
 
     @PluginMethod
     public void loginIdentifiedUser(PluginCall call) {
+        if (!ensureInitialized(call)) {
+            return;
+        }
         String email = call.getString("email");
         String userId = call.getString("userId");
         String userHash = call.getString("userHash");
@@ -142,6 +133,9 @@ public class IntercomPlugin extends Plugin {
 
     @PluginMethod
     public void loginUnidentifiedUser(PluginCall call) {
+        if (!ensureInitialized(call)) {
+            return;
+        }
         Intercom
             .client()
             .loginUnidentifiedUser(
@@ -161,6 +155,9 @@ public class IntercomPlugin extends Plugin {
 
     @PluginMethod
     public void updateUser(PluginCall call) {
+        if (!ensureInitialized(call)) {
+            return;
+        }
         String email = call.getString("email");
         String phone = call.getString("phone");
         String name = call.getString("name");
@@ -192,6 +189,9 @@ public class IntercomPlugin extends Plugin {
 
     @PluginMethod
     public void setCustomAttributes(PluginCall call) {
+        if (!ensureInitialized(call)) {
+            return;
+        }
         Map<String, Object> attributes = mapFromJSON(call.getObject("attributes"));
 
         UserAttributes.Builder userAttributesBuilder = new UserAttributes.Builder();
@@ -223,12 +223,18 @@ public class IntercomPlugin extends Plugin {
 
     @PluginMethod
     public void logout(PluginCall call) {
+        if (!ensureInitialized(call)) {
+            return;
+        }
         Intercom.client().logout();
         call.resolve();
     }
 
     @PluginMethod
     public void logEvent(PluginCall call) {
+        if (!ensureInitialized(call)) {
+            return;
+        }
         String eventName = call.getString("name");
         Map<String, Object> metaData = mapFromJSON(call.getObject("data"));
 
@@ -243,12 +249,18 @@ public class IntercomPlugin extends Plugin {
 
     @PluginMethod
     public void displayMessenger(PluginCall call) {
+        if (!ensureInitialized(call)) {
+            return;
+        }
         Intercom.client().present();
         call.resolve();
     }
 
     @PluginMethod
     public void displayMessageComposer(PluginCall call) {
+        if (!ensureInitialized(call)) {
+            return;
+        }
         String messageContent = call.getString("content");
         if (messageContent == null) {
             Intercom.client().displayMessageComposer();
@@ -260,30 +272,45 @@ public class IntercomPlugin extends Plugin {
 
     @PluginMethod
     public void displayHelpCenter(PluginCall call) {
+        if (!ensureInitialized(call)) {
+            return;
+        }
         Intercom.client().present(IntercomSpace.HelpCenter);
         call.resolve();
     }
 
     @PluginMethod
     public void hideMessenger(PluginCall call) {
+        if (!ensureInitialized(call)) {
+            return;
+        }
         Intercom.client().hideIntercom();
         call.resolve();
     }
 
     @PluginMethod
     public void displayLauncher(PluginCall call) {
+        if (!ensureInitialized(call)) {
+            return;
+        }
         Intercom.client().setLauncherVisibility(Intercom.VISIBLE);
         call.resolve();
     }
 
     @PluginMethod
     public void hideLauncher(PluginCall call) {
+        if (!ensureInitialized(call)) {
+            return;
+        }
         Intercom.client().setLauncherVisibility(Intercom.GONE);
         call.resolve();
     }
 
     @PluginMethod
     public void displayArticle(PluginCall call) {
+        if (!ensureInitialized(call)) {
+            return;
+        }
         String articleId = call.getString("id");
         Intercom.client().presentContent(new IntercomContent.Article(articleId));
         call.resolve();
@@ -291,8 +318,48 @@ public class IntercomPlugin extends Plugin {
 
     @PluginMethod
     public void displaySurvey(PluginCall call) {
+        if (!ensureInitialized(call)) {
+            return;
+        }
         String surveyId = call.getString("id");
         Intercom.client().presentContent(new IntercomContent.Survey(surveyId));
         call.resolve();
+    }
+
+    private boolean ensureInitialized(PluginCall call) {
+        if (isInitialized) {
+            return true;
+        }
+
+        Context context = getContext();
+        if (context == null) {
+            if (call != null) {
+                call.reject("No application context available for Intercom");
+            }
+            return false;
+        }
+
+        String apiKey = getConfig().getString("android_apiKey", null);
+        String appId = getConfig().getString("appId", getConfig().getString("androidAppId", null));
+
+        if (apiKey == null || appId == null) {
+            if (call != null) {
+                call.reject("Missing Intercom configuration");
+            }
+            return false;
+        }
+
+        try {
+            Application application = (Application) context.getApplicationContext();
+            Intercom.initialize(application, apiKey, appId);
+            isInitialized = true;
+            IntercomComponentController.enableAutoComponents(context);
+            return true;
+        } catch (Exception e) {
+            if (call != null) {
+                call.reject("Could not initialize Intercom: " + e.getMessage());
+            }
+            return false;
+        }
     }
 }
