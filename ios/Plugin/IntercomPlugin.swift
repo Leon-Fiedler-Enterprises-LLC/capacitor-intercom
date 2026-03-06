@@ -86,11 +86,11 @@ public class IntercomPlugin: CAPPlugin {
         if hmac != nil {
             Intercom.setUserHash(hmac!)
         }
-        
+
         let attributes = ICMUserAttributes()
         attributes.userId = userId
         attributes.email = email
-        
+
         Intercom.loginUser(with: attributes) { result in
             switch result {
             case .success:
