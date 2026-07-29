@@ -78,9 +78,10 @@ public class IntercomPlugin extends Plugin {
             return;
         }
 
-        try {
-            Intercom.client().handlePushMessage();
-        } catch (Throwable ignored) {}
+        // Note: legacy Intercom.client().handlePushMessage() was removed in the
+        // Intercom Android SDK (gone by 18.x), so there's nothing to call here.
+        // Intercom push (if used) is delivered via IntercomPushClient in the host
+        // app's FirebaseMessagingService (handlePush + sendTokenToIntercom).
         try {
             Context context = getContext();
             if (context != null) {
