@@ -1,6 +1,6 @@
 {
   "name": "@sencrop/capacitor-intercom",
-  "version": "9.0.2",
+  "version": "9.0.4",
   "description": "Intercom Plugin for Capacitor",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
@@ -11,7 +11,8 @@
     "android/build.gradle",
     "dist/",
     "ios/Plugin/",
-    "SencropCapacitorIntercom.podspec"
+    "SencropCapacitorIntercom.podspec",
+    "Package.swift"
   ],
   "author": "Sencrop",
   "license": "MIT",

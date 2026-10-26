@@ -2,6 +2,8 @@
 
 Intercom Plugin for Capacitor
 
+Native SDKs: Intercom iOS 19.9.1 (iOS 15+) and Intercom Android 18.10.0.
+
 ## Install
 
 ```bash
@@ -325,6 +327,8 @@ displaySurvey(survey: IntercomSurvey) => Promise<void>
 
 Construct a type with a set of properties K of type T
 
-<code>{ [P in K]: T; }</code>
+<code>{
+ [P in K]: T;
+ }</code>
 
 </docgen-api>

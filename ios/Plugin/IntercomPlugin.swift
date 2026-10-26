@@ -12,9 +12,27 @@ enum PluginError: Error {
  * here: https://capacitorjs.com/docs/plugins/ios
  */
 @objc(IntercomPlugin)
-public class IntercomPlugin: CAPPlugin {
-    
-    
+public class IntercomPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "IntercomPlugin"
+    public let jsName = "Intercom"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "loginIdentifiedUser", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "loginUnidentifiedUser", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "updateUser", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "initialize", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setCustomAttributes", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "logout", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "logEvent", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "displayMessenger", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "displayMessageComposer", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "displayHelpCenter", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "displayArticle", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "hideMessenger", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "displayLauncher", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "hideLauncher", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "displaySurvey", returnType: CAPPluginReturnPromise)
+    ]
+
     @objc func initialize(_ call: CAPPluginCall) {
         let config = getConfig()
         let apiKey = config.getString("ios_apiKey") ?? "ADD_IN_CAPACITOR_CONFIG_JSON"
@@ -27,12 +45,11 @@ public class IntercomPlugin: CAPPlugin {
     @objc func didRegisterWithToken(notification: Notification) {
         guard let deviceToken = notification.object as? Data else { return }
 
-        Intercom.setDeviceToken(
-            deviceToken,
-            failure: { error in
-                print("[Intercom SDK] Failed to set device token:", error?.localizedDescription ?? "Unknown error")
+        Intercom.setDeviceToken(deviceToken) { result in
+            if case .failure(let error) = result {
+                print("[Intercom SDK] Failed to set device token:", error.localizedDescription)
             }
-        )
+        }
     }
     
     @objc func updateUser(_ call: CAPPluginCall) {
